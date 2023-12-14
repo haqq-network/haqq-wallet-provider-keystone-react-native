@@ -5,45 +5,78 @@ import {
   ProviderInterface,
   stringToUtf8Bytes
 } from '@haqq/provider-base';
-import { CryptoHDKey, DataType, ETHSignature, EthSignRequest, URRegistryDecoder } from '@keystonehq/bc-ur-registry-eth';
+import { CryptoAccount, CryptoHDKey, DataType, ETHSignature, EthSignRequest, RegistryItem } from '@keystonehq/bc-ur-registry-eth';
+import { UR } from '@ngraveio/bc-ur';
 import { UnsignedTransaction, ethers, utils } from 'ethers';
 import { HDNode } from 'ethers/lib/utils';
-import { ProviderKeystoneReactNativeOptions } from './types';
-import { makeID } from './utils';
-import { UR } from '@ngraveio/bc-ur';
+import { getCryptoAccountOrCryptoHDKeyFromHex } from './get-crypto-account-or-crypto-hdkey';
+import { AccountInfo, KeyringAccountEnum, ProviderKeystonErrorEnum, ProviderKeystoneReactNativeOptions, SupportedRegistryTypeEnum } from './types';
+import { isCryptoAccount, isCryptoHDKey, makeID } from './utils';
 
-export class ProviderKeystoneReactNative
-  extends Provider<ProviderKeystoneReactNativeOptions>
-  implements ProviderInterface {
+type HDPath = string;
+
+const SUPPORTED_REGISTRY_TYPES: string[] = [SupportedRegistryTypeEnum.CryptoAccount, SupportedRegistryTypeEnum.CryptoHDkey]
+
+export class ProviderKeystoneReactNative extends Provider<ProviderKeystoneReactNativeOptions> implements ProviderInterface {
   public stop: boolean = false;
-  public xpub: string = '';
-  public xfp: string = '';
+  private _xfp: string;
+  private _registryItem: RegistryItem;
+  private _cryptoAccontDataMap: Record<HDPath, AccountInfo> = {}
 
   constructor(options: ProviderKeystoneReactNativeOptions) {
     super({ ...options, getPassword: () => Promise.resolve('') });
+    this._registryItem = getCryptoAccountOrCryptoHDKeyFromHex(this._options.qrCBORHex);
 
-    const hdKey = CryptoHDKey.fromCBOR(this._options.cryptoHDKeyCBOR)
-    this.xpub = hdKey.getBip32Key();
-    this.xfp = hdKey.getOrigin().getSourceFingerprint().toString('hex');
+    if (!this._registryItem) {
+      this._throwError(ProviderKeystonErrorEnum.InvalidCborHex, 'constructor')
+    }
+
+    if (!SUPPORTED_REGISTRY_TYPES.includes(
+      this._registryItem.getRegistryType().getType()
+    )) {
+      this._throwError(ProviderKeystonErrorEnum.UnsupportedRegistryType, 'constructor')
+    }
+
+    if (isCryptoHDKey(this._registryItem)) {
+      this._initWithCryptoHDKey(this._registryItem);
+    }
+
+    if (isCryptoAccount(this._registryItem)) {
+      this._initWithCryptoAccount(this._registryItem);
+    }
+  }
+
+  getKeyringAccount(): KeyringAccountEnum {
+    if (isCryptoAccount(this._registryItem)) {
+      const descriptor = this._registryItem.getOutputDescriptors().find(d => {
+        try {
+          return !!d.getHDKey()?.getNote();
+        } catch (e) {
+          return false;
+        }
+      })
+      return descriptor.getHDKey().getNote() as KeyringAccountEnum;
+    }
+
+    return KeyringAccountEnum.standard;
   }
 
   getIdentifier(): string {
-    return this.xfp;
+    return this._options.qrCBORHex
   }
 
   async getAccountInfo(hdPath: string) {
     let resp = { publicKey: '', address: '' };
     try {
       this.stop = false;
-      const subPath = hdPath.replace("44'/60'/0'", '');
-      const hdNode = HDNode
-        .fromExtendedKey(this.xpub)
-        .derivePath(subPath);
+      if (isCryptoHDKey(this._registryItem)) {
+        resp = await this._getAccountInfoForCryptoHdKey(hdPath, this._registryItem);
+      }
 
-      resp = {
-        publicKey: hdNode.publicKey,
-        address: ethers.utils.computeAddress(hdNode.publicKey),
-      };
+      if (isCryptoAccount(this._registryItem)) {
+        resp = await this._getAccountInfoForCryptoAccount(hdPath);
+      }
+
       this.emit('getPublicKeyForHDPath', true);
     } catch (e) {
       if (e instanceof Error) {
@@ -66,7 +99,7 @@ export class ProviderKeystoneReactNative
         unsignedTxBuffer,
         DataType.transaction,
         hdPath,
-        this.xfp,
+        this._xfp,
         requestID,
         transaction.chainId,
         address
@@ -76,7 +109,7 @@ export class ProviderKeystoneReactNative
         requestID,
         signRequest: ethSignRequest.toUR().cbor
       });
-      
+
       const signatureUr = UR.fromBuffer(signatureBuffer);
 
       if (signatureUr.type === 'eth-signature') {
@@ -184,22 +217,59 @@ export class ProviderKeystoneReactNative
   }
 
 
-  catchError(e: Error, source: string) {
-    switch (e.name) {
-      case 'TransportStatusError':
-        // @ts-ignore
-        switch (String(e.statusCode)) {
-          case '27010':
-            this.emit(source, false, e.message, e.name, '27010');
-            throw new Error('keystone_locked');
-          case '27013':
-            this.emit(source, false, e.message, e.name, '27013');
-            throw new Error('keystone_rejected');
+  private _initWithCryptoHDKey(hdKey: CryptoHDKey) {
+    this._xfp = hdKey.getOrigin()?.getSourceFingerprint()?.toString('hex') || '';
+  }
+
+  private _initWithCryptoAccount(account: CryptoAccount) {
+    this._xfp = account.getMasterFingerprint().toString('hex');
+    for (const descriptor of account.getOutputDescriptors()) {
+      try {
+        const cryptoHDKey = descriptor.getHDKey();
+        if (cryptoHDKey) {
+          const key = cryptoHDKey.getKey();
+          const path = cryptoHDKey.getOrigin().getPath() as HDPath;
+          const address = ethers.utils.computeAddress(key);
+          const publicKey = `0x${key.toString('hex')}`
+          this._cryptoAccontDataMap[path] = {
+            address,
+            publicKey
+          };
         }
-        break;
-      default:
-        super.catchError(e, source);
-        break;
+      } catch (e) {
+        throw new Error(`KeystoneError#invalid_data: ${e}`);
+      }
     }
+  }
+
+  private async _getAccountInfoForCryptoHdKey(hdPath: string, hdKey: CryptoHDKey) {
+    const subPath = hdPath.replace(hdKey.getOrigin().getPath(), '');
+
+    const hdNode = HDNode
+      .fromExtendedKey(hdKey.getBip32Key())
+      .derivePath(subPath);
+
+    return {
+      publicKey: hdNode.publicKey,
+      address: ethers.utils.computeAddress(hdNode.publicKey),
+    };
+  }
+
+  private async _getAccountInfoForCryptoAccount(hdPath: string) {
+    const accointInfo = this._cryptoAccontDataMap[hdPath]
+
+    if (!accointInfo) {
+      this._throwError(ProviderKeystonErrorEnum.InvalidPath, 'getAccountInfo');
+    }
+
+    return accointInfo;
+  }
+
+
+  private _throwError(errCode: ProviderKeystonErrorEnum, source: string) {
+    const err = new Error(errCode)
+    const errMsg = `[ProviderKeystoneReactNative:${source}]: ${errCode}`
+    this.emit(source, false, err.message, err.name);
+    throw new Error(errMsg);
   }
 }

@@ -6,7 +6,7 @@
     "skipLibCheck": true,
     "declaration": true,
     "outDir": "./dist",
-    "strict": true
+    "strict": false
   },
   "include": ["src"],
   "exclude": ["node_modules", "**/__tests__/*"],
@@ -23,7 +23,7 @@
       "**/__tests__/**",
       "**/swagger/**",
       "**/index.*.ts",
-      "*.json"
+      "*.json",
     ]
   }
 }

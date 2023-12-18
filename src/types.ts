@@ -1,7 +1,8 @@
 import { ProviderInterface } from "@haqq/provider-base";
 
 export type KeystoneAwaitForSignParams = {
-  signRequest: Buffer;
+  cborHex: string;
+  urType: string;
   requestID: string;
 }
 

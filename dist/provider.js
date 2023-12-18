@@ -65,63 +65,98 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProviderKeystoneReactNative = void 0;
 var provider_base_1 = require("@haqq/provider-base");
 var bc_ur_registry_eth_1 = require("@keystonehq/bc-ur-registry-eth");
+var bc_ur_1 = require("@ngraveio/bc-ur");
 var ethers_1 = require("ethers");
 var utils_1 = require("ethers/lib/utils");
+var constants_1 = require("./constants");
+var get_crypto_account_or_crypto_hdkey_1 = require("./get-crypto-account-or-crypto-hdkey");
+var types_1 = require("./types");
 var utils_2 = require("./utils");
-var bc_ur_1 = require("@ngraveio/bc-ur");
+var SUPPORTED_REGISTRY_TYPES = [types_1.SupportedRegistryTypeEnum.CryptoAccount, types_1.SupportedRegistryTypeEnum.CryptoHDkey];
 var ProviderKeystoneReactNative = /** @class */ (function (_super) {
     __extends(ProviderKeystoneReactNative, _super);
     function ProviderKeystoneReactNative(options) {
-        var _this = this;
-        var _a, _b, _c;
-        _this = _super.call(this, __assign(__assign({}, options), { getPassword: function () { return Promise.resolve(''); } })) || this;
+        var _this = _super.call(this, __assign(__assign({}, options), { getPassword: function () { return Promise.resolve(''); } })) || this;
         _this.stop = false;
-        _this.xpub = '';
-        _this.xfp = '';
-        _this.rootPath = '';
-        var cryptoHDKeyCBOR = Buffer.from(_this._options.cryptoHDKeyCBORHex, 'hex');
-        var hdKey = bc_ur_registry_eth_1.CryptoHDKey.fromCBOR(cryptoHDKeyCBOR);
-        _this.xpub = hdKey.getBip32Key();
-        _this.xfp = ((_b = (_a = hdKey.getOrigin()) === null || _a === void 0 ? void 0 : _a.getSourceFingerprint()) === null || _b === void 0 ? void 0 : _b.toString('hex')) || '';
-        _this.rootPath = ((_c = hdKey.getOrigin()) === null || _c === void 0 ? void 0 : _c.getPath()) || '';
+        _this._cryptoAccontDataMap = {};
+        _this._registryItem = (0, get_crypto_account_or_crypto_hdkey_1.getCryptoAccountOrCryptoHDKeyFromHex)(_this._options.qrCBORHex);
+        if (!_this._registryItem) {
+            _this._throwError(types_1.ProviderKeystonErrorEnum.InvalidCborHex, 'constructor');
+        }
+        if (!SUPPORTED_REGISTRY_TYPES.includes(_this._registryItem.getRegistryType().getType())) {
+            _this._throwError(types_1.ProviderKeystonErrorEnum.UnsupportedRegistryType, 'constructor');
+        }
+        if ((0, utils_2.isCryptoHDKey)(_this._registryItem)) {
+            _this._initWithCryptoHDKey(_this._registryItem);
+        }
+        if ((0, utils_2.isCryptoAccount)(_this._registryItem)) {
+            _this._initWithCryptoAccount(_this._registryItem);
+        }
         return _this;
     }
     ProviderKeystoneReactNative.prototype.getIdentifier = function () {
-        return this._options.cryptoHDKeyCBORHex;
+        return this._options.qrCBORHex;
+    };
+    ProviderKeystoneReactNative.prototype.getKeyringAccount = function () {
+        if ((0, utils_2.isCryptoAccount)(this._registryItem)) {
+            var descriptor = this._registryItem.getOutputDescriptors().find(function (d) {
+                var _a;
+                try {
+                    return !!((_a = d.getHDKey()) === null || _a === void 0 ? void 0 : _a.getNote());
+                }
+                catch (e) {
+                    return false;
+                }
+            });
+            return descriptor.getHDKey().getNote();
+        }
+        return types_1.KeyringAccountEnum.standard;
+    };
+    ProviderKeystoneReactNative.prototype.getPathPattern = function () {
+        return constants_1.PATHS_PATTERN_MAP[this.getKeyringAccount()];
     };
     ProviderKeystoneReactNative.prototype.getAccountInfo = function (hdPath) {
         return __awaiter(this, void 0, void 0, function () {
-            var resp, subPath, hdNode;
+            var resp, e_1;
             return __generator(this, function (_a) {
-                resp = { publicKey: '', address: '' };
-                try {
-                    this.stop = false;
-                    subPath = hdPath.replace("44'/60'/0'/", '');
-                    console.log('subPath', subPath);
-                    console.log('this.xpub', this.xpub);
-                    console.log('this.xfp', this.xfp);
-                    console.log('this.rootPath', this.rootPath);
-                    hdNode = utils_1.HDNode
-                        .fromExtendedKey(this.xpub)
-                        .derivePath(subPath);
-                    resp = {
-                        publicKey: hdNode.publicKey,
-                        address: ethers_1.ethers.utils.computeAddress(hdNode.publicKey),
-                    };
-                    this.emit('getPublicKeyForHDPath', true);
+                switch (_a.label) {
+                    case 0:
+                        resp = { publicKey: '', address: '' };
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 6, , 7]);
+                        this.stop = false;
+                        if (!(0, utils_2.isCryptoHDKey)(this._registryItem)) return [3 /*break*/, 3];
+                        return [4 /*yield*/, this._getAccountInfoForCryptoHdKey(hdPath, this._registryItem)];
+                    case 2:
+                        resp = _a.sent();
+                        _a.label = 3;
+                    case 3:
+                        if (!(0, utils_2.isCryptoAccount)(this._registryItem)) return [3 /*break*/, 5];
+                        return [4 /*yield*/, this._getAccountInfoForCryptoAccount(hdPath)];
+                    case 4:
+                        resp = _a.sent();
+                        _a.label = 5;
+                    case 5:
+                        this.emit('getPublicKeyForHDPath', true);
+                        return [3 /*break*/, 7];
+                    case 6:
+                        e_1 = _a.sent();
+                        if (e_1 instanceof Error) {
+                            this.catchError(e_1, 'getPublicKeyForHDPath');
+                        }
+                        return [3 /*break*/, 7];
+                    case 7: return [2 /*return*/, resp];
                 }
-                catch (e) {
-                    if (e instanceof Error) {
-                        this.catchError(e, 'getPublicKeyForHDPath');
-                    }
-                }
-                return [2 /*return*/, resp];
             });
         });
     };
+    ProviderKeystoneReactNative.prototype.buildPath = function (index) {
+        return this.getPathPattern().replace(constants_1.PATH_INDEX_KEY, "".concat(index));
+    };
     ProviderKeystoneReactNative.prototype.signTransaction = function (hdPath, transaction) {
         return __awaiter(this, void 0, void 0, function () {
-            var resp, unsignedTx, unsignedTxBuffer, address, requestID, ethSignRequest, signatureBuffer, signatureUr, ethSignature, signature, jsonSignature, result, e_1;
+            var resp, unsignedTx, unsignedTxBuffer, address, requestID, ethSignRequest, ur, signatureBuffer, signatureUr, ethSignature, signature, jsonSignature, result, e_2;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -135,11 +170,13 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
                         return [4 /*yield*/, this.getAccountInfo(hdPath)];
                     case 2:
                         address = (_a.sent()).address;
-                        requestID = (0, utils_2.makeID)(5);
-                        ethSignRequest = bc_ur_registry_eth_1.EthSignRequest.constructETHRequest(unsignedTxBuffer, bc_ur_registry_eth_1.DataType.transaction, hdPath, this.xfp, requestID, transaction.chainId, address);
+                        requestID = (0, utils_2.uuidv4)();
+                        ethSignRequest = bc_ur_registry_eth_1.EthSignRequest.constructETHRequest(unsignedTxBuffer, bc_ur_registry_eth_1.DataType.transaction, hdPath, this._xfp, requestID, transaction.chainId, address);
+                        ur = ethSignRequest.toUR();
                         return [4 /*yield*/, this._options.awaitForSign({
                                 requestID: requestID,
-                                signRequest: ethSignRequest.toUR().cbor
+                                cborHex: ur.cbor.toString('hex'),
+                                urType: ur.type
                             })];
                     case 3:
                         signatureBuffer = _a.sent();
@@ -165,9 +202,9 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
                         }
                         return [3 /*break*/, 5];
                     case 4:
-                        e_1 = _a.sent();
-                        if (e_1 instanceof Error) {
-                            this.catchError(e_1, 'signTransaction');
+                        e_2 = _a.sent();
+                        if (e_2 instanceof Error) {
+                            this.catchError(e_2, 'signTransaction');
                         }
                         return [3 /*break*/, 5];
                     case 5: return [2 /*return*/, resp];
@@ -246,23 +283,64 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
             });
         });
     };
-    ProviderKeystoneReactNative.prototype.catchError = function (e, source) {
-        switch (e.name) {
-            case 'TransportStatusError':
-                // @ts-ignore
-                switch (String(e.statusCode)) {
-                    case '27010':
-                        this.emit(source, false, e.message, e.name, '27010');
-                        throw new Error('keystone_locked');
-                    case '27013':
-                        this.emit(source, false, e.message, e.name, '27013');
-                        throw new Error('keystone_rejected');
+    ProviderKeystoneReactNative.prototype._initWithCryptoHDKey = function (hdKey) {
+        var _a, _b;
+        this._xfp = ((_b = (_a = hdKey.getOrigin()) === null || _a === void 0 ? void 0 : _a.getSourceFingerprint()) === null || _b === void 0 ? void 0 : _b.toString('hex')) || '';
+    };
+    ProviderKeystoneReactNative.prototype._initWithCryptoAccount = function (account) {
+        this._xfp = account.getMasterFingerprint().toString('hex');
+        for (var _i = 0, _a = account.getOutputDescriptors(); _i < _a.length; _i++) {
+            var descriptor = _a[_i];
+            try {
+                var cryptoHDKey = descriptor.getHDKey();
+                if (cryptoHDKey) {
+                    var key = cryptoHDKey.getKey();
+                    var path = cryptoHDKey.getOrigin().getPath();
+                    var address = ethers_1.ethers.utils.computeAddress(key);
+                    var publicKey = "0x".concat(key.toString('hex'));
+                    this._cryptoAccontDataMap[path] = {
+                        address: address,
+                        publicKey: publicKey
+                    };
                 }
-                break;
-            default:
-                _super.prototype.catchError.call(this, e, source);
-                break;
+            }
+            catch (e) {
+                throw new Error("KeystoneError#invalid_data: ".concat(e));
+            }
         }
+    };
+    ProviderKeystoneReactNative.prototype._getAccountInfoForCryptoHdKey = function (hdPath, hdKey) {
+        return __awaiter(this, void 0, void 0, function () {
+            var subPath, hdNode;
+            return __generator(this, function (_a) {
+                subPath = hdPath.replace(hdKey.getOrigin().getPath(), '');
+                hdNode = utils_1.HDNode
+                    .fromExtendedKey(hdKey.getBip32Key())
+                    .derivePath(subPath);
+                return [2 /*return*/, {
+                        publicKey: hdNode.publicKey,
+                        address: ethers_1.ethers.utils.computeAddress(hdNode.publicKey),
+                    }];
+            });
+        });
+    };
+    ProviderKeystoneReactNative.prototype._getAccountInfoForCryptoAccount = function (hdPath) {
+        return __awaiter(this, void 0, void 0, function () {
+            var accointInfo;
+            return __generator(this, function (_a) {
+                accointInfo = this._cryptoAccontDataMap[hdPath];
+                if (!accointInfo) {
+                    this._throwError(types_1.ProviderKeystonErrorEnum.InvalidPath, 'getAccountInfo');
+                }
+                return [2 /*return*/, accointInfo];
+            });
+        });
+    };
+    ProviderKeystoneReactNative.prototype._throwError = function (errCode, source) {
+        var err = new Error(errCode);
+        var errMsg = "[ProviderKeystoneReactNative:".concat(source, "]: ").concat(errCode);
+        this.emit(source, false, err.message, err.name);
+        throw new Error(errMsg);
     };
     return ProviderKeystoneReactNative;
 }(provider_base_1.Provider));

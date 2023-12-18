@@ -9,9 +9,10 @@ import { CryptoAccount, CryptoHDKey, DataType, ETHSignature, EthSignRequest, Reg
 import { UR } from '@ngraveio/bc-ur';
 import { UnsignedTransaction, ethers, utils } from 'ethers';
 import { HDNode } from 'ethers/lib/utils';
+import { PATHS_PATTERN_MAP, PATH_INDEX_KEY } from './constants';
 import { getCryptoAccountOrCryptoHDKeyFromHex } from './get-crypto-account-or-crypto-hdkey';
 import { AccountInfo, KeyringAccountEnum, ProviderKeystonErrorEnum, ProviderKeystoneReactNativeOptions, SupportedRegistryTypeEnum } from './types';
-import { isCryptoAccount, isCryptoHDKey, makeID } from './utils';
+import { isCryptoAccount, isCryptoHDKey, uuidv4 } from './utils';
 
 type HDPath = string;
 
@@ -46,6 +47,10 @@ export class ProviderKeystoneReactNative extends Provider<ProviderKeystoneReactN
     }
   }
 
+  getIdentifier(): string {
+    return this._options.qrCBORHex
+  }
+
   getKeyringAccount(): KeyringAccountEnum {
     if (isCryptoAccount(this._registryItem)) {
       const descriptor = this._registryItem.getOutputDescriptors().find(d => {
@@ -61,8 +66,8 @@ export class ProviderKeystoneReactNative extends Provider<ProviderKeystoneReactN
     return KeyringAccountEnum.standard;
   }
 
-  getIdentifier(): string {
-    return this._options.qrCBORHex
+  getPathPattern() {
+    return PATHS_PATTERN_MAP[this.getKeyringAccount()]
   }
 
   async getAccountInfo(hdPath: string) {
@@ -86,14 +91,19 @@ export class ProviderKeystoneReactNative extends Provider<ProviderKeystoneReactN
     return resp;
   }
 
+  buildPath(index: number) {
+    return this.getPathPattern().replace(PATH_INDEX_KEY, `${index}`)
+  }
+
   async signTransaction(hdPath: string, transaction: TransactionRequest) {
     let resp = '';
     try {
       this.stop = false;
+      console.log('tx', JSON.stringify(transaction, null, 2))
       const unsignedTx = ethers.utils.serializeTransaction(transaction as UnsignedTransaction);
       const unsignedTxBuffer = Buffer.from(unsignedTx.substring(2), "hex");
       const { address } = await this.getAccountInfo(hdPath);
-      const requestID = makeID(5);
+      const requestID = uuidv4();
 
       const ethSignRequest = EthSignRequest.constructETHRequest(
         unsignedTxBuffer,
@@ -105,9 +115,11 @@ export class ProviderKeystoneReactNative extends Provider<ProviderKeystoneReactN
         address
       );
 
+      const ur =  ethSignRequest.toUR();
       const signatureBuffer = await this._options.awaitForSign({
         requestID,
-        signRequest: ethSignRequest.toUR().cbor
+        cborHex: ur.cbor.toString('hex'),
+        urType: ur.type
       });
 
       const signatureUr = UR.fromBuffer(signatureBuffer);

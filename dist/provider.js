@@ -72,7 +72,10 @@ var constants_1 = require("./constants");
 var get_crypto_account_or_crypto_hdkey_1 = require("./get-crypto-account-or-crypto-hdkey");
 var types_1 = require("./types");
 var utils_2 = require("./utils");
-var SUPPORTED_REGISTRY_TYPES = [types_1.SupportedRegistryTypeEnum.CryptoAccount, types_1.SupportedRegistryTypeEnum.CryptoHDkey];
+var SUPPORTED_REGISTRY_TYPES = [
+    types_1.SupportedRegistryTypeEnum.CryptoAccount,
+    types_1.SupportedRegistryTypeEnum.CryptoHDkey,
+];
 var ProviderKeystoneReactNative = /** @class */ (function (_super) {
     __extends(ProviderKeystoneReactNative, _super);
     function ProviderKeystoneReactNative(options) {
@@ -156,7 +159,7 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
     };
     ProviderKeystoneReactNative.prototype.signTransaction = function (hdPath, transaction) {
         return __awaiter(this, void 0, void 0, function () {
-            var resp, unsignedTx, unsignedTxBuffer, address, requestID, ethSignRequest, ur, signatureBuffer, signatureUr, ethSignature, signature, jsonSignature, result, e_2;
+            var resp, unsignedTx, dataType, unsignedTxBuffer, address, requestID, ethSignRequest, ur, signatureHex, signatureBuffer, signatureUr, ethSignature, signature, jsonSignature, result, e_2;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -166,41 +169,39 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
                         _a.trys.push([1, 4, , 5]);
                         this.stop = false;
                         unsignedTx = ethers_1.ethers.utils.serializeTransaction(transaction);
-                        unsignedTxBuffer = Buffer.from(unsignedTx.substring(2), "hex");
+                        dataType = transaction.type === 0
+                            ? bc_ur_registry_eth_1.DataType.transaction
+                            : bc_ur_registry_eth_1.DataType.typedTransaction;
+                        unsignedTxBuffer = Buffer.from(unsignedTx.substring(2), 'hex');
                         return [4 /*yield*/, this.getAccountInfo(hdPath)];
                     case 2:
                         address = (_a.sent()).address;
                         requestID = (0, utils_2.uuidv4)();
-                        ethSignRequest = bc_ur_registry_eth_1.EthSignRequest.constructETHRequest(unsignedTxBuffer, bc_ur_registry_eth_1.DataType.transaction, hdPath, this._xfp, requestID, transaction.chainId, address);
+                        ethSignRequest = bc_ur_registry_eth_1.EthSignRequest.constructETHRequest(unsignedTxBuffer, dataType, hdPath, this._xfp, requestID, transaction.chainId, address);
                         ur = ethSignRequest.toUR();
                         return [4 /*yield*/, this._options.awaitForSign({
                                 requestID: requestID,
                                 cborHex: ur.cbor.toString('hex'),
-                                urType: ur.type
+                                urType: ur.type,
                             })];
                     case 3:
-                        signatureBuffer = _a.sent();
-                        signatureUr = bc_ur_1.UR.fromBuffer(signatureBuffer);
-                        if (signatureUr.type === 'eth-signature') {
-                            ethSignature = bc_ur_registry_eth_1.ETHSignature.fromCBOR(signatureUr.cbor);
-                            signature = ethSignature.getSignature();
-                            jsonSignature = {
-                                r: signature.slice(0, 32).toString('hex'),
-                                s: signature.slice(32, 64).toString('hex'),
-                                v: signature.slice(64).toString('hex'),
-                            };
-                            result = ethers_1.utils.serializeTransaction(transaction, {
-                                r: '0x' + jsonSignature.r,
-                                s: '0x' + jsonSignature.s,
-                                v: parseInt(jsonSignature.v, 10),
-                            });
-                            this.emit('signTransaction', true);
-                            return [2 /*return*/, result];
-                        }
-                        else {
-                            throw new Error('Invalid signature type');
-                        }
-                        return [3 /*break*/, 5];
+                        signatureHex = (_a.sent()).signatureHex;
+                        signatureBuffer = Buffer.from(signatureHex, 'hex');
+                        signatureUr = new bc_ur_1.UR(signatureBuffer, 'eth-signature');
+                        ethSignature = bc_ur_registry_eth_1.ETHSignature.fromCBOR(signatureUr.cbor);
+                        signature = ethSignature.getSignature();
+                        jsonSignature = {
+                            r: signature.slice(0, 32).toString('hex'),
+                            s: signature.slice(32, 64).toString('hex'),
+                            v: signature.slice(64).toString('hex'),
+                        };
+                        result = ethers_1.utils.serializeTransaction(transaction, {
+                            r: '0x' + jsonSignature.r,
+                            s: '0x' + jsonSignature.s,
+                            v: parseInt(jsonSignature.v, 10),
+                        });
+                        this.emit('signTransaction', true);
+                        return [2 /*return*/, result];
                     case 4:
                         e_2 = _a.sent();
                         if (e_2 instanceof Error) {
@@ -261,31 +262,10 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
         this.emit('abortCall');
         this.stop = true;
     };
-    ProviderKeystoneReactNative.prototype.confirmAddress = function (hdPath) {
-        return __awaiter(this, void 0, void 0, function () {
-            var resp, response;
-            return __generator(this, function (_a) {
-                resp = '';
-                try {
-                    this.stop = false;
-                    response = { address: '0x123' } //await eth.getAddress(hdPath, true);
-                    ;
-                    resp = response.address;
-                    this.emit('confirmAddress', true);
-                }
-                catch (e) {
-                    if (e instanceof Error) {
-                        this.emit('confirmAddress', false, e.message);
-                        throw new Error(e.message);
-                    }
-                }
-                return [2 /*return*/, resp];
-            });
-        });
-    };
     ProviderKeystoneReactNative.prototype._initWithCryptoHDKey = function (hdKey) {
         var _a, _b;
-        this._xfp = ((_b = (_a = hdKey.getOrigin()) === null || _a === void 0 ? void 0 : _a.getSourceFingerprint()) === null || _b === void 0 ? void 0 : _b.toString('hex')) || '';
+        this._xfp =
+            ((_b = (_a = hdKey.getOrigin()) === null || _a === void 0 ? void 0 : _a.getSourceFingerprint()) === null || _b === void 0 ? void 0 : _b.toString('hex')) || '';
     };
     ProviderKeystoneReactNative.prototype._initWithCryptoAccount = function (account) {
         this._xfp = account.getMasterFingerprint().toString('hex');
@@ -300,7 +280,7 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
                     var publicKey = "0x".concat(key.toString('hex'));
                     this._cryptoAccontDataMap[path] = {
                         address: address,
-                        publicKey: publicKey
+                        publicKey: publicKey,
                     };
                 }
             }
@@ -311,12 +291,11 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
     };
     ProviderKeystoneReactNative.prototype._getAccountInfoForCryptoHdKey = function (hdPath, hdKey) {
         return __awaiter(this, void 0, void 0, function () {
-            var subPath, hdNode;
+            var rootPath, subPath, hdNode;
             return __generator(this, function (_a) {
-                subPath = hdPath.replace(hdKey.getOrigin().getPath(), '');
-                hdNode = utils_1.HDNode
-                    .fromExtendedKey(hdKey.getBip32Key())
-                    .derivePath(subPath);
+                rootPath = "".concat(hdKey.getOrigin().getPath(), "/");
+                subPath = hdPath.replace(rootPath, '');
+                hdNode = utils_1.HDNode.fromExtendedKey(hdKey.getBip32Key()).derivePath(subPath);
                 return [2 /*return*/, {
                         publicKey: hdNode.publicKey,
                         address: ethers_1.ethers.utils.computeAddress(hdNode.publicKey),

@@ -1,13 +1,15 @@
-/// <reference types="node" />
 import { ProviderInterface } from "@haqq/provider-base";
 export type KeystoneAwaitForSignParams = {
     cborHex: string;
     urType: string;
     requestID: string;
 };
+export type KeystoneAwaitForSignReturnType = {
+    signatureHex: string;
+};
 export type ProviderKeystoneReactNativeOptions = {
     qrCBORHex: string;
-    awaitForSign(params: KeystoneAwaitForSignParams): Promise<Buffer>;
+    awaitForSign(params: KeystoneAwaitForSignParams): Promise<KeystoneAwaitForSignReturnType>;
 };
 export declare enum SupportedRegistryTypeEnum {
     CryptoHDkey = "crypto-hdkey",

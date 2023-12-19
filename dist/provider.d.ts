@@ -19,7 +19,6 @@ export declare class ProviderKeystoneReactNative extends Provider<ProviderKeysto
     signPersonalMessage(hdPath: string, message: string | BytesLike): Promise<string>;
     signTypedData(hdPath: string, domainHash: string, valuesHash: string): Promise<string>;
     abort(): void;
-    confirmAddress(hdPath: string): Promise<string>;
     private _initWithCryptoHDKey;
     private _initWithCryptoAccount;
     private _getAccountInfoForCryptoHdKey;

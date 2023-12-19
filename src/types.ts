@@ -6,9 +6,13 @@ export type KeystoneAwaitForSignParams = {
   requestID: string;
 }
 
+export type KeystoneAwaitForSignReturnType = {
+  signatureHex: string;
+}
+
 export type ProviderKeystoneReactNativeOptions = {
   qrCBORHex: string;
-  awaitForSign(params: KeystoneAwaitForSignParams): Promise<Buffer>;
+  awaitForSign(params: KeystoneAwaitForSignParams): Promise<KeystoneAwaitForSignReturnType>;
 };
 
 export enum SupportedRegistryTypeEnum {

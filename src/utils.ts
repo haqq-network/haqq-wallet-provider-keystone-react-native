@@ -15,3 +15,24 @@ export function isCryptoHDKey(item: RegistryItem): item is CryptoHDKey {
 export function isCryptoAccount(item: RegistryItem): item is CryptoAccount {
   return item instanceof CryptoAccount;
 }
+
+export function hexBuffer(str: string): Buffer {
+  return Buffer.from(str.startsWith("0x") ? str.slice(2) : str, "hex");
+}
+
+
+export function splitPath(path: string): number[] {
+  const result: number[] = [];
+  const components = path.split("/");
+  components.forEach((element) => {
+    let number = parseInt(element, 10);
+    if (isNaN(number)) {
+      return; // FIXME shouldn't it throws instead?
+    }
+    if (element.length > 1 && element[element.length - 1] === "'") {
+      number += 0x80000000;
+    }
+    result.push(number);
+  });
+  return result;
+}

@@ -17,11 +17,12 @@ export declare class ProviderKeystoneReactNative extends Provider<ProviderKeysto
     buildPath(index: number): string;
     signTransaction(hdPath: string, transaction: TransactionRequest): Promise<string>;
     signPersonalMessage(hdPath: string, message: string | BytesLike): Promise<string>;
-    signTypedData(hdPath: string, domainHash: string, valuesHash: string): Promise<string>;
+    signTypedData(hdPath: string, domainSeparatorHex: string, hashStructMessageHex: string): Promise<string>;
     abort(): void;
     private _initWithCryptoHDKey;
     private _initWithCryptoAccount;
     private _getAccountInfoForCryptoHdKey;
     private _getAccountInfoForCryptoAccount;
     private _throwError;
+    private _parseSignature;
 }

@@ -21,6 +21,7 @@
   "dependencies": {
     "@ethereumjs/tx": "^5.1.0",
     "@ethersproject/abstract-provider": "^5.7.0",
+    "@keystonehq/bc-ur-registry-cosmos": "^0.5.2",
     "@keystonehq/bc-ur-registry-eth": "^0.7.7",
     "@keystonehq/ur-decoder": "^0.12.2",
     "ethers": "^5.7.2",
@@ -32,7 +33,7 @@
     "react-native": "*"
   },
   "devDependencies": {
-    "@haqq/provider-base": "^0.0.18",
+    "@haqq/provider-base": "^0.0.20",
     "@types/jest": "^29.4.0",
     "@types/node": "^18.14.1",
     "@types/react-native": "^0.71.3",
@@ -40,7 +41,6 @@
     "prettier": "^2.8.4",
     "react": "18.2.0",
     "react-native": "0.71.3",
-    "react-native-ble-plx": "^2.0.3",
     "ts-jest": "^29.0.5",
     "tslint": "^6.1.3",
     "tslint-config-prettier": "^1.18.0",

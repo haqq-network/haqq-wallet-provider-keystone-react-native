@@ -1131,12 +1131,13 @@
   dependencies:
     "@hapi/hoek" "^9.0.0"
 
-"@haqq/provider-base@^0.0.18":
-  version "0.0.18"
-  resolved "https://registry.yarnpkg.com/@haqq/provider-base/-/provider-base-0.0.18.tgz#aa5cc0ed43ef0d19a0fe7f667cde7f7d0b365619"
-  integrity sha512-JUFMkYZkz/QIujpVUDqpM+PYf0jj2Cazty1Zb4MgTY9HWoaWBbXnD2YKLRXA6LC2HaS1EPqcppX8RAoh5C/4jg==
+"@haqq/provider-base@^0.0.20":
+  version "0.0.20"
+  resolved "https://registry.yarnpkg.com/@haqq/provider-base/-/provider-base-0.0.20.tgz#34d3d6c8a564da54f60c5586da1ef2efb4bec713"
+  integrity sha512-UUbuLzZN/GH5K50NY8DDHNUaJ3u0DEVnNq/8JGmloTxlMGkYP+nHikXAKA6jXDapToNmFQEjjqtUCkHA17ri3w==
   dependencies:
     bech32-converting "^1.0.9"
+    ethers "^5.7.2"
     events "^3.3.0"
 
 "@istanbuljs/load-nyc-config@^1.0.0":
@@ -1416,6 +1417,15 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+"@keystonehq/bc-ur-registry-cosmos@^0.5.2":
+  version "0.5.2"
+  resolved "https://registry.yarnpkg.com/@keystonehq/bc-ur-registry-cosmos/-/bc-ur-registry-cosmos-0.5.2.tgz#2c49de4b7befc52f6bec220bced90995f11f3b6c"
+  integrity sha512-P2XCJwPxgmxsT9RPYoGN70emRPxcY05qycGavkrMw1DJgM/YtkrsFxMMYyn+/sQWCnlxccoNaN/yn++rWrjOQA==
+  dependencies:
+    "@keystonehq/bc-ur-registry" "^0.5.4"
+    bs58check "^2.1.2"
+    uuid "^8.3.2"
+
 "@keystonehq/bc-ur-registry-eth@^0.6.12":
   version "0.6.14"
   resolved "https://registry.yarnpkg.com/@keystonehq/bc-ur-registry-eth/-/bc-ur-registry-eth-0.6.14.tgz#4b8c34d653278524eb574a2879910072ee621ae0"
@@ -1443,6 +1453,15 @@
   dependencies:
     "@ngraveio/bc-ur" "^1.1.5"
     base58check "^2.0.0"
+    tslib "^2.3.0"
+
+"@keystonehq/bc-ur-registry@^0.5.4":
+  version "0.5.5"
+  resolved "https://registry.yarnpkg.com/@keystonehq/bc-ur-registry/-/bc-ur-registry-0.5.5.tgz#b7cd9b08846c627e988933049aac94d3412fbb16"
+  integrity sha512-PoclPHf0OhpIKLfLwzymsu+CjkWf5ZKvaVjpkq3HUalcI4KW8wLk0m8qI2kBVv6F0BQ0ERPqW8OfjLTVqIgWLA==
+  dependencies:
+    "@ngraveio/bc-ur" "^1.1.5"
+    bs58check "^2.1.2"
     tslib "^2.3.0"
 
 "@keystonehq/ur-decoder@^0.12.2":
@@ -5185,11 +5204,6 @@ react-is@^17.0.1:
   version "17.0.2"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
   integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
-
-react-native-ble-plx@^2.0.3:
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/react-native-ble-plx/-/react-native-ble-plx-2.0.3.tgz#b0a746f33389dbf7fd7b158513330d487d5d0fbb"
-  integrity sha512-62LRDBPf/03K7sge+qq2ZuF8PWCGB782G+SBrpgNm5fA5Hs3FCY1ExTJZ1G0tB5ZhBPYEXcKRxPLuFegcDFrqA==
 
 react-native-codegen@^0.71.5:
   version "0.71.6"

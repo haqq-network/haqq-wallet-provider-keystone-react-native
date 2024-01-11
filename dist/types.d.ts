@@ -1,4 +1,4 @@
-import { ProviderInterface } from "@haqq/provider-base";
+import { ProviderInterface } from '@haqq/provider-base';
 export type KeystoneAwaitForSignParams = {
     cborHex: string;
     urType: string;
@@ -18,7 +18,8 @@ export declare enum SupportedRegistryTypeEnum {
 export declare enum ProviderKeystonErrorEnum {
     UnsupportedRegistryType = "unsupported_registry_type",
     InvalidCborHex = "invalid_cbor_hex",
-    InvalidPath = "invalid_path"
+    InvalidPath = "invalid_path",
+    InvalidRequestID = "invalid_request_id"
 }
 export declare enum KeyringAccountEnum {
     standard = "account.standard",

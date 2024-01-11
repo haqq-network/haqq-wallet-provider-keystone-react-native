@@ -63,6 +63,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProviderKeystoneReactNative = void 0;
+var bytes_1 = require("@ethersproject/bytes");
 var provider_base_1 = require("@haqq/provider-base");
 var bc_ur_registry_eth_1 = require("@keystonehq/bc-ur-registry-eth");
 var bc_ur_1 = require("@ngraveio/bc-ur");
@@ -72,6 +73,7 @@ var constants_1 = require("./constants");
 var get_crypto_account_or_crypto_hdkey_1 = require("./get-crypto-account-or-crypto-hdkey");
 var types_1 = require("./types");
 var utils_2 = require("./utils");
+var bc_ur_registry_cosmos_1 = require("@keystonehq/bc-ur-registry-cosmos");
 var SUPPORTED_REGISTRY_TYPES = [
     types_1.SupportedRegistryTypeEnum.CryptoAccount,
     types_1.SupportedRegistryTypeEnum.CryptoHDkey,
@@ -101,6 +103,7 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
         return this._options.qrCBORHex;
     };
     ProviderKeystoneReactNative.prototype.getKeyringAccount = function () {
+        var _a;
         if ((0, utils_2.isCryptoAccount)(this._registryItem)) {
             var descriptor = this._registryItem.getOutputDescriptors().find(function (d) {
                 var _a;
@@ -111,7 +114,7 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
                     return false;
                 }
             });
-            return descriptor.getHDKey().getNote();
+            return (_a = descriptor === null || descriptor === void 0 ? void 0 : descriptor.getHDKey()) === null || _a === void 0 ? void 0 : _a.getNote();
         }
         return types_1.KeyringAccountEnum.standard;
     };
@@ -159,14 +162,14 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
     };
     ProviderKeystoneReactNative.prototype.signTransaction = function (hdPath, transaction) {
         return __awaiter(this, void 0, void 0, function () {
-            var resp, unsignedTx, dataType, unsignedTxBuffer, address, requestID, ethSignRequest, ur, signatureHex, signature, result, e_2;
+            var resp, unsignedTx, dataType, unsignedTxBuffer, address, requestID, signRequest, ur, signatureHex, signature, result, e_2;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         resp = '';
                         _a.label = 1;
                     case 1:
-                        _a.trys.push([1, 5, , 6]);
+                        _a.trys.push([1, 4, , 5]);
                         this.stop = false;
                         unsignedTx = ethers_1.ethers.utils.serializeTransaction(transaction);
                         dataType = transaction.type === 0
@@ -177,8 +180,8 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
                     case 2:
                         address = (_a.sent()).address;
                         requestID = (0, utils_2.uuidv4)();
-                        ethSignRequest = bc_ur_registry_eth_1.EthSignRequest.constructETHRequest(unsignedTxBuffer, dataType, hdPath, this._xfp, requestID, transaction.chainId, address);
-                        ur = ethSignRequest.toUR();
+                        signRequest = bc_ur_registry_eth_1.EthSignRequest.constructETHRequest(unsignedTxBuffer, dataType, hdPath, this._xfp, requestID, transaction.chainId, address);
+                        ur = signRequest.toUR();
                         return [4 /*yield*/, this._options.awaitForSign({
                                 requestID: requestID,
                                 cborHex: ur.cbor.toString('hex'),
@@ -186,33 +189,31 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
                             })];
                     case 3:
                         signatureHex = (_a.sent()).signatureHex;
-                        return [4 /*yield*/, this._parseSignature(signatureHex)];
-                    case 4:
-                        signature = _a.sent();
+                        signature = this._parseSignature(signatureHex, requestID);
                         result = ethers_1.utils.serializeTransaction(transaction, signature);
                         this.emit('signTransaction', true);
                         return [2 /*return*/, result];
-                    case 5:
+                    case 4:
                         e_2 = _a.sent();
                         if (e_2 instanceof Error) {
                             this.catchError(e_2, 'signTransaction');
                         }
-                        return [3 /*break*/, 6];
-                    case 6: return [2 /*return*/, resp];
+                        return [3 /*break*/, 5];
+                    case 5: return [2 /*return*/, resp];
                 }
             });
         });
     };
     ProviderKeystoneReactNative.prototype.signPersonalMessage = function (hdPath, message) {
         return __awaiter(this, void 0, void 0, function () {
-            var resp, m, unsignedBuffer, dataType, address, requestID, ethSignRequest, ur, signatureHex, signature, v, e_3;
+            var resp, m, unsignedBuffer, dataType, address, requestID, signRequest, ur, signatureHex, e_3;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         resp = '';
                         _a.label = 1;
                     case 1:
-                        _a.trys.push([1, 5, , 6]);
+                        _a.trys.push([1, 4, , 5]);
                         this.stop = false;
                         m = Array.from(typeof message === 'string' ? (0, provider_base_1.stringToUtf8Bytes)(message) : message);
                         unsignedBuffer = Buffer.from(m);
@@ -221,8 +222,8 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
                     case 2:
                         address = (_a.sent()).address;
                         requestID = (0, utils_2.uuidv4)();
-                        ethSignRequest = bc_ur_registry_eth_1.EthSignRequest.constructETHRequest(unsignedBuffer, dataType, hdPath, this._xfp, requestID, undefined, address);
-                        ur = ethSignRequest.toUR();
+                        signRequest = bc_ur_registry_eth_1.EthSignRequest.constructETHRequest(unsignedBuffer, dataType, hdPath, this._xfp, requestID, undefined, address);
+                        ur = signRequest.toUR();
                         return [4 /*yield*/, this._options.awaitForSign({
                                 requestID: requestID,
                                 cborHex: ur.cbor.toString('hex'),
@@ -230,43 +231,80 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
                             })];
                     case 3:
                         signatureHex = (_a.sent()).signatureHex;
-                        return [4 /*yield*/, this._parseSignature(signatureHex)];
-                    case 4:
-                        signature = _a.sent();
-                        v = (signature.v - 27).toString(16).padStart(2, '0');
-                        resp = '0x' + signature.r + signature.s + v;
+                        resp = this._parseSignatureToHex(signatureHex, requestID);
                         this.emit('signPersonalMessage', true);
-                        return [3 /*break*/, 6];
-                    case 5:
+                        return [3 /*break*/, 5];
+                    case 4:
                         e_3 = _a.sent();
                         if (e_3 instanceof Error) {
                             this.catchError(e_3, 'signPersonalMessage');
                         }
-                        return [3 /*break*/, 6];
-                    case 6: return [2 /*return*/, resp];
+                        return [3 /*break*/, 5];
+                    case 5: return [2 /*return*/, resp];
                 }
             });
         });
     };
     ProviderKeystoneReactNative.prototype.signTypedData = function (hdPath, domainSeparatorHex, hashStructMessageHex) {
         return __awaiter(this, void 0, void 0, function () {
-            var resp, signature, v;
+            var resp, concatHash, domainSeparator, hashStruct, paths, buffer_1, offset, dataType, unsignedTxBuffer, address, requestID, signRequest, ur, signatureHex, e_4;
             return __generator(this, function (_a) {
-                resp = '';
-                try {
-                    this.stop = false;
-                    signature = { r: 0, s: 0, v: 0 };
-                    v = (signature.v - 27).toString(16).padStart(2, '0');
-                    resp = '0x' + signature.r + signature.s + v;
-                    this.emit('signTypedData', true);
+                switch (_a.label) {
+                    case 0:
+                        resp = '';
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 4, , 5]);
+                        this.stop = false;
+                        console.log('signTypedData', JSON.stringify({ hdPath: hdPath, domainSeparatorHex: domainSeparatorHex, hashStructMessageHex: hashStructMessageHex }, null, 2));
+                        concatHash = (0, bytes_1.hexConcat)([
+                            '0x1901',
+                            domainSeparatorHex,
+                            hashStructMessageHex,
+                        ]);
+                        domainSeparator = (0, utils_2.hexBuffer)(domainSeparatorHex);
+                        hashStruct = (0, utils_2.hexBuffer)(hashStructMessageHex);
+                        paths = (0, utils_2.splitPath)(hdPath);
+                        buffer_1 = Buffer.alloc(1 + paths.length * 4 + 32 + 32, 0);
+                        offset = 0;
+                        buffer_1[0] = paths.length;
+                        paths.forEach(function (element, index) {
+                            buffer_1.writeUInt32BE(element, 1 + 4 * index);
+                        });
+                        offset = 1 + 4 * paths.length;
+                        domainSeparator.copy(buffer_1, offset);
+                        offset += 32;
+                        hashStruct.copy(buffer_1, offset);
+                        console.log('hex', buffer_1.toString('hex'));
+                        console.log('utf', buffer_1.toString('utf8'));
+                        dataType = bc_ur_registry_cosmos_1.SignDataType.direct;
+                        unsignedTxBuffer = (0, utils_2.hexBuffer)(concatHash);
+                        return [4 /*yield*/, this.getAccountInfo(hdPath)];
+                    case 2:
+                        address = (_a.sent()).address;
+                        requestID = (0, utils_2.uuidv4)();
+                        signRequest = bc_ur_registry_cosmos_1.CosmosSignRequest.constructCosmosRequest(requestID, [this._xfp], unsignedTxBuffer, dataType, [hdPath], undefined, address);
+                        ur = signRequest.toUR();
+                        return [4 /*yield*/, this._options.awaitForSign({
+                                requestID: requestID,
+                                cborHex: ur.cbor.toString('hex'),
+                                urType: ur.type,
+                            })];
+                    case 3:
+                        signatureHex = (_a.sent()).signatureHex;
+                        console.log({ signatureHex: signatureHex });
+                        resp = this._parseSignatureToHex(signatureHex, requestID, true);
+                        console.log({ resp: resp });
+                        this.emit('signTypedData', true);
+                        return [3 /*break*/, 5];
+                    case 4:
+                        e_4 = _a.sent();
+                        if (e_4 instanceof Error) {
+                            this.catchError(e_4, 'signTypedData');
+                        }
+                        return [2 /*return*/, ''];
+                    case 5: return [2 /*return*/, resp];
                 }
-                catch (e) {
-                    if (e instanceof Error) {
-                        this.catchError(e, 'signTypedData');
-                    }
-                    return [2 /*return*/, ''];
-                }
-                return [2 /*return*/, resp];
             });
         });
     };
@@ -333,26 +371,48 @@ var ProviderKeystoneReactNative = /** @class */ (function (_super) {
         this.emit(source, false, err.message, err.name);
         throw new Error(errMsg);
     };
-    ProviderKeystoneReactNative.prototype._parseSignature = function (signatureHex) {
-        return __awaiter(this, void 0, void 0, function () {
-            var signatureBuffer, signatureUr, ethSignature, signature, jsonSignature;
-            return __generator(this, function (_a) {
-                signatureBuffer = Buffer.from(signatureHex, 'hex');
-                signatureUr = new bc_ur_1.UR(signatureBuffer, 'eth-signature');
-                ethSignature = bc_ur_registry_eth_1.ETHSignature.fromCBOR(signatureUr.cbor);
-                signature = ethSignature.getSignature();
-                jsonSignature = {
-                    r: signature.slice(0, 32).toString('hex'),
-                    s: signature.slice(32, 64).toString('hex'),
-                    v: signature.slice(64).toString('hex'),
-                };
-                return [2 /*return*/, {
-                        r: '0x' + jsonSignature.r,
-                        s: '0x' + jsonSignature.s,
-                        v: parseInt(jsonSignature.v, 10),
-                    }];
-            });
+    ProviderKeystoneReactNative.prototype._parseSignature = function (signatureHex, requestID, isTypedData) {
+        if (isTypedData === void 0) { isTypedData = false; }
+        var signatureBuffer = Buffer.from(signatureHex, 'hex');
+        var signatureUr = new bc_ur_1.UR(signatureBuffer, 'eth-signature');
+        var ethSignature = isTypedData ? bc_ur_registry_eth_1.ETHSignature.fromCBOR(signatureUr.cbor) : bc_ur_registry_cosmos_1.CosmosSignature.fromCBOR(signatureUr.cbor);
+        var signatureRequestID = (0, utils_2.uuidV4Stringify)(ethSignature.getRequestId());
+        console.log({
+            signatureRequestIDStr: signatureRequestID,
+            signatureRequestID: ethSignature.getRequestId().toString('hex'),
+            requestID: requestID,
         });
+        console.log('equal', ethSignature.getRequestId().toString('hex') ===
+            requestID.replace('-', ''));
+        // if (signatureRequestID !== requestID) {
+        //   this._throwError(
+        //     ProviderKeystonErrorEnum.InvalidRequestID,
+        //     '_parseSignature',
+        //   );
+        // }
+        var signature = ethSignature.getSignature();
+        var jsonSignature = isTypedData
+            ? {
+                v: signature[0].toString(),
+                r: signature.slice(1, 1 + 32).toString('hex'),
+                s: signature.slice(1 + 32, 1 + 32 + 32).toString('hex'),
+            }
+            : {
+                r: signature.slice(0, 32).toString('hex'),
+                s: signature.slice(32, 64).toString('hex'),
+                v: signature.slice(64).toString('hex'),
+            };
+        return {
+            r: '0x' + jsonSignature.r,
+            s: '0x' + jsonSignature.s,
+            v: parseInt(jsonSignature.v, 10),
+        };
+    };
+    ProviderKeystoneReactNative.prototype._parseSignatureToHex = function (signatureHex, requestID, isTypedData) {
+        if (isTypedData === void 0) { isTypedData = false; }
+        var signature = this._parseSignature(signatureHex, requestID, isTypedData);
+        var v = (signature.v - 27).toString(16).padStart(2, '0');
+        return '0x' + signature.r + signature.s + v;
     };
     return ProviderKeystoneReactNative;
 }(provider_base_1.Provider));

@@ -11,6 +11,7 @@ var ProviderKeystonErrorEnum;
     ProviderKeystonErrorEnum["UnsupportedRegistryType"] = "unsupported_registry_type";
     ProviderKeystonErrorEnum["InvalidCborHex"] = "invalid_cbor_hex";
     ProviderKeystonErrorEnum["InvalidPath"] = "invalid_path";
+    ProviderKeystonErrorEnum["InvalidRequestID"] = "invalid_request_id";
 })(ProviderKeystonErrorEnum = exports.ProviderKeystonErrorEnum || (exports.ProviderKeystonErrorEnum = {}));
 var KeyringAccountEnum;
 (function (KeyringAccountEnum) {

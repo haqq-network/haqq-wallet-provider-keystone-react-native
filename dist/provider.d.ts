@@ -25,4 +25,5 @@ export declare class ProviderKeystoneReactNative extends Provider<ProviderKeysto
     private _getAccountInfoForCryptoAccount;
     private _throwError;
     private _parseSignature;
+    private _parseSignatureToHex;
 }

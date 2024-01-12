@@ -18,10 +18,6 @@ import { UR } from "@ngraveio/bc-ur";
 import { ethers, utils, UnsignedTransaction } from "ethers";
 import { HDNode } from "ethers/lib/utils";
 
-import {
-  CosmosSignRequest,
-  SignDataType,
-} from "@keystonehq/bc-ur-registry-cosmos";
 import { PATH_INDEX_KEY, PATHS_PATTERN_MAP } from "./constants";
 import { getCryptoAccountOrCryptoHDKeyFromHex } from "./get-crypto-account-or-crypto-hdkey";
 import {

@@ -19,9 +19,7 @@
     "typedoc": "typedoc"
   },
   "dependencies": {
-    "@ethereumjs/tx": "^5.1.0",
     "@ethersproject/abstract-provider": "^5.7.0",
-    "@keystonehq/bc-ur-registry-cosmos": "^0.5.2",
     "@keystonehq/bc-ur-registry-eth": "^0.7.7",
     "@keystonehq/ur-decoder": "^0.12.2",
     "ethers": "^5.7.2",

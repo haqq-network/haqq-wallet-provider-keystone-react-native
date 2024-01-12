@@ -148,7 +148,7 @@ export class ProviderKeystoneReactNative
         transaction.type === 0
           ? DataType.transaction
           : DataType.typedTransaction;
-      const unsignedTxBuffer = Buffer.from(unsignedTx.substring(2), "hex");
+      const unsignedTxBuffer = hexBuffer(unsignedTx);
       const { address } = await this.getAccountInfo(hdPath);
       const requestID = uuidv4();
 
@@ -243,7 +243,7 @@ export class ProviderKeystoneReactNative
         ...typedData,
         primaryType,
       });
-      const unsignedTxBuffer = hexBuffer(typedDataJson);
+      const unsignedTxBuffer = Buffer.from(typedDataJson, "utf8");
       const dataType = DataType.typedData;
       const { address } = await this.getAccountInfo(hdPath);
       const requestID = uuidv4();
@@ -342,21 +342,11 @@ export class ProviderKeystoneReactNative
   }
 
   private _parseSignature(signatureHex: string, requestID: string) {
-    const signatureBuffer = Buffer.from(signatureHex, "hex");
+    const signatureBuffer = hexBuffer(signatureHex);
     const signatureUr = new UR(signatureBuffer, "eth-signature");
 
     const ethSignature = ETHSignature.fromCBOR(signatureUr.cbor);
     const signatureRequestID = uuidv4Stringify(ethSignature.getRequestId());
-
-    console.log({
-      signatureRequestIDStr: signatureRequestID,
-      signatureRequestID: ethSignature.getRequestId().toString("hex"),
-      requestID,
-    });
-    console.log(
-      "equal",
-      ethSignature.getRequestId().toString("hex") === requestID.replace("-", "")
-    );
 
     if (signatureRequestID !== requestID) {
       this._throwError(
@@ -370,13 +360,13 @@ export class ProviderKeystoneReactNative
     const jsonSignature = {
       r: signature.slice(0, 32).toString("hex"),
       s: signature.slice(32, 64).toString("hex"),
-      v: signature.slice(64).toString("hex"),
+      v: signature.slice(64, 65).toString("hex"),
     };
 
     return {
       r: "0x" + jsonSignature.r,
       s: "0x" + jsonSignature.s,
-      v: parseInt(jsonSignature.v, 10),
+      v: parseInt(jsonSignature.v, 16),
     };
   }
 
@@ -386,6 +376,6 @@ export class ProviderKeystoneReactNative
   ): string {
     const signature = this._parseSignature(signatureHex, requestID);
     const v = (signature.v - 27).toString(16).padStart(2, "0");
-    return "0x" + signature.r + signature.s + v;
+    return "0x" + signature.r.slice(2) + signature.s.slice(2) + v;
   }
 }

@@ -1,4 +1,4 @@
-import { ProviderInterface } from "@haqq/provider-base";
+import {ProviderInterface} from '@haqq/provider-base';
 
 export type KeystoneAwaitForSignParams = {
   cborHex: string;
@@ -13,26 +13,26 @@ export type KeystoneAwaitForSignReturnType = {
 export type ProviderKeystoneReactNativeOptions = {
   qrCBORHex: string;
   awaitForSign(
-    params: KeystoneAwaitForSignParams
+    params: KeystoneAwaitForSignParams,
   ): Promise<KeystoneAwaitForSignReturnType>;
 };
 
 export enum SupportedRegistryTypeEnum {
-  CryptoHDkey = "crypto-hdkey",
-  CryptoAccount = "crypto-account",
+  CryptoHDkey = 'crypto-hdkey',
+  CryptoAccount = 'crypto-account',
 }
 
 export enum ProviderKeystonErrorEnum {
-  UnsupportedRegistryType = "unsupported_registry_type",
-  InvalidCborHex = "invalid_cbor_hex",
-  InvalidPath = "invalid_path",
-  InvalidRequestID = "invalid_request_id",
+  UnsupportedRegistryType = 'unsupported_registry_type',
+  InvalidCborHex = 'invalid_cbor_hex',
+  InvalidPath = 'invalid_path',
+  InvalidRequestID = 'invalid_request_id',
 }
 
 export enum KeyringAccountEnum {
-  standard = "account.standard",
-  ledger_live = "account.ledger_live",
-  ledger_legacy = "account.ledger_legacy",
+  standard = 'account.standard',
+  ledger_live = 'account.ledger_live',
+  ledger_legacy = 'account.ledger_legacy',
 }
 
 export type AsyncReturnType<T extends (...args: any) => any> = T extends (
@@ -43,4 +43,4 @@ export type AsyncReturnType<T extends (...args: any) => any> = T extends (
   ? U
   : any;
 
-export type AccountInfo = AsyncReturnType<ProviderInterface["getAccountInfo"]>;
+export type AccountInfo = AsyncReturnType<ProviderInterface['getAccountInfo']>;

@@ -1,4 +1,4 @@
-import { CryptoAccount, CryptoHDKey } from "@keystonehq/bc-ur-registry-eth";
+import {CryptoAccount, CryptoHDKey} from '@keystonehq/bc-ur-registry-eth';
 
 const cache = new Map();
 
@@ -8,7 +8,7 @@ export function getCryptoAccountOrCryptoHDKeyFromHex(hex: string) {
       return cache.get(hex);
     }
 
-    const buffer = Buffer.from(hex, "hex");
+    const buffer = Buffer.from(hex, 'hex');
     let account: CryptoAccount | CryptoHDKey | undefined;
 
     try {

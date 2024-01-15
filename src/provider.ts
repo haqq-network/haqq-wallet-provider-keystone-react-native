@@ -1,11 +1,11 @@
-import { TransactionRequest } from "@ethersproject/abstract-provider";
+import {TransactionRequest} from '@ethersproject/abstract-provider';
 import {
   stringToUtf8Bytes,
   BytesLike,
   Provider,
   ProviderInterface,
   TypedData,
-} from "@haqq/provider-base";
+} from '@haqq/provider-base';
 import {
   CryptoAccount,
   CryptoHDKey,
@@ -13,27 +13,27 @@ import {
   EthSignRequest,
   ETHSignature,
   RegistryItem,
-} from "@keystonehq/bc-ur-registry-eth";
-import { UR } from "@ngraveio/bc-ur";
-import { ethers, utils, UnsignedTransaction } from "ethers";
-import { HDNode } from "ethers/lib/utils";
+} from '@keystonehq/bc-ur-registry-eth';
+import {UR} from '@ngraveio/bc-ur';
+import {ethers, utils, UnsignedTransaction} from 'ethers';
+import {HDNode} from 'ethers/lib/utils';
 
-import { PATH_INDEX_KEY, PATHS_PATTERN_MAP } from "./constants";
-import { getCryptoAccountOrCryptoHDKeyFromHex } from "./get-crypto-account-or-crypto-hdkey";
+import {PATH_INDEX_KEY, PATHS_PATTERN_MAP} from './constants';
+import {getCryptoAccountOrCryptoHDKeyFromHex} from './get-crypto-account-or-crypto-hdkey';
 import {
   AccountInfo,
   KeyringAccountEnum,
   ProviderKeystoneReactNativeOptions,
   ProviderKeystonErrorEnum,
   SupportedRegistryTypeEnum,
-} from "./types";
+} from './types';
 import {
   hexBuffer,
   isCryptoAccount,
   isCryptoHDKey,
   uuidv4,
   uuidv4Stringify,
-} from "./utils";
+} from './utils';
 
 type HDPath = string;
 
@@ -47,29 +47,29 @@ export class ProviderKeystoneReactNative
   implements ProviderInterface
 {
   public stop: boolean = false;
-  private _xfp: string;
+  private _xfp: string = '';
   private _registryItem: RegistryItem;
   private _cryptoAccontDataMap: Record<HDPath, AccountInfo> = {};
 
   constructor(options: ProviderKeystoneReactNativeOptions) {
-    super({ ...options, getPassword: () => Promise.resolve("") });
+    super({...options, getPassword: () => Promise.resolve('')});
 
     this._registryItem = getCryptoAccountOrCryptoHDKeyFromHex(
-      this._options.qrCBORHex
+      this._options.qrCBORHex,
     );
 
     if (!this._registryItem) {
-      this._throwError(ProviderKeystonErrorEnum.InvalidCborHex, "constructor");
+      this._throwError(ProviderKeystonErrorEnum.InvalidCborHex, 'constructor');
     }
 
     if (
       !SUPPORTED_REGISTRY_TYPES.includes(
-        this._registryItem.getRegistryType().getType()
+        this._registryItem.getRegistryType().getType(),
       )
     ) {
       this._throwError(
         ProviderKeystonErrorEnum.UnsupportedRegistryType,
-        "constructor"
+        'constructor',
       );
     }
 
@@ -88,7 +88,7 @@ export class ProviderKeystoneReactNative
 
   getKeyringAccount(): KeyringAccountEnum {
     if (isCryptoAccount(this._registryItem)) {
-      const descriptor = this._registryItem.getOutputDescriptors().find((d) => {
+      const descriptor = this._registryItem.getOutputDescriptors().find(d => {
         try {
           return !!d.getHDKey()?.getNote();
         } catch (e) {
@@ -106,13 +106,13 @@ export class ProviderKeystoneReactNative
   }
 
   async getAccountInfo(hdPath: string) {
-    let resp = { publicKey: "", address: "" };
+    let resp = {publicKey: '', address: ''};
     try {
       this.stop = false;
       if (isCryptoHDKey(this._registryItem)) {
         resp = await this._getAccountInfoForCryptoHdKey(
           hdPath,
-          this._registryItem
+          this._registryItem,
         );
       }
 
@@ -120,10 +120,10 @@ export class ProviderKeystoneReactNative
         resp = await this._getAccountInfoForCryptoAccount(hdPath);
       }
 
-      this.emit("getPublicKeyForHDPath", true);
+      this.emit('getPublicKeyForHDPath', true);
     } catch (e) {
       if (e instanceof Error) {
-        this.catchError(e, "getPublicKeyForHDPath");
+        this.catchError(e, 'getPublicKeyForHDPath');
       }
     }
     return resp;
@@ -134,18 +134,18 @@ export class ProviderKeystoneReactNative
   }
 
   async signTransaction(hdPath: string, transaction: TransactionRequest) {
-    const resp = "";
+    const resp = '';
     try {
       this.stop = false;
       const unsignedTx = ethers.utils.serializeTransaction(
-        transaction as UnsignedTransaction
+        transaction as UnsignedTransaction,
       );
       const dataType =
         transaction.type === 0
           ? DataType.transaction
           : DataType.typedTransaction;
       const unsignedTxBuffer = hexBuffer(unsignedTx);
-      const { address } = await this.getAccountInfo(hdPath);
+      const {address} = await this.getAccountInfo(hdPath);
       const requestID = uuidv4();
 
       const signRequest = EthSignRequest.constructETHRequest(
@@ -155,27 +155,27 @@ export class ProviderKeystoneReactNative
         this._xfp,
         requestID,
         transaction.chainId,
-        address
+        address,
       );
 
       const ur = signRequest.toUR();
-      const { signatureHex } = await this._options.awaitForSign({
+      const {signatureHex} = await this._options.awaitForSign({
         requestID,
-        cborHex: ur.cbor.toString("hex"),
+        cborHex: ur.cbor.toString('hex'),
         urType: ur.type,
       });
       const signature = this._parseSignature(signatureHex, requestID);
 
       const result = utils.serializeTransaction(
         transaction as UnsignedTransaction,
-        signature
+        signature,
       );
 
-      this.emit("signTransaction", true);
+      this.emit('signTransaction', true);
       return result;
     } catch (e) {
       if (e instanceof Error) {
-        this.catchError(e, "signTransaction");
+        this.catchError(e, 'signTransaction');
       }
     }
 
@@ -184,18 +184,18 @@ export class ProviderKeystoneReactNative
 
   async signPersonalMessage(
     hdPath: string,
-    message: string | BytesLike
+    message: string | BytesLike,
   ): Promise<string> {
-    let resp = "";
+    let resp = '';
     try {
       this.stop = false;
 
       const m = Array.from(
-        typeof message === "string" ? stringToUtf8Bytes(message) : message
+        typeof message === 'string' ? stringToUtf8Bytes(message) : message,
       );
       const unsignedBuffer = Buffer.from(m);
       const dataType = DataType.personalMessage;
-      const { address } = await this.getAccountInfo(hdPath);
+      const {address} = await this.getAccountInfo(hdPath);
       const requestID = uuidv4();
 
       const signRequest = EthSignRequest.constructETHRequest(
@@ -205,20 +205,20 @@ export class ProviderKeystoneReactNative
         this._xfp,
         requestID,
         undefined,
-        address
+        address,
       );
 
       const ur = signRequest.toUR();
-      const { signatureHex } = await this._options.awaitForSign({
+      const {signatureHex} = await this._options.awaitForSign({
         requestID,
-        cborHex: ur.cbor.toString("hex"),
+        cborHex: ur.cbor.toString('hex'),
         urType: ur.type,
       });
       resp = this._parseSignatureToHex(signatureHex, requestID);
-      this.emit("signPersonalMessage", true);
+      this.emit('signPersonalMessage', true);
     } catch (e) {
       if (e instanceof Error) {
-        this.catchError(e, "signPersonalMessage");
+        this.catchError(e, 'signPersonalMessage');
       }
     }
 
@@ -226,12 +226,12 @@ export class ProviderKeystoneReactNative
   }
 
   async signTypedData(hdPath: string, typedData: TypedData) {
-    let resp = "";
+    let resp = '';
     try {
       this.stop = false;
 
       // calculate primary type
-      const otherTypes = { ...typedData.types };
+      const otherTypes = {...typedData.types};
       delete otherTypes.EIP712Domain;
       const primaryType = Object.keys(otherTypes)[0];
 
@@ -239,9 +239,9 @@ export class ProviderKeystoneReactNative
         ...typedData,
         primaryType,
       });
-      const unsignedTxBuffer = Buffer.from(typedDataJson, "utf8");
+      const unsignedTxBuffer = Buffer.from(typedDataJson, 'utf8');
       const dataType = DataType.typedData;
-      const { address } = await this.getAccountInfo(hdPath);
+      const {address} = await this.getAccountInfo(hdPath);
       const requestID = uuidv4();
 
       const signRequest = EthSignRequest.constructETHRequest(
@@ -251,39 +251,39 @@ export class ProviderKeystoneReactNative
         this._xfp,
         requestID,
         undefined,
-        address
+        address,
       );
 
       const ur = signRequest.toUR();
-      const { signatureHex } = await this._options.awaitForSign({
+      const {signatureHex} = await this._options.awaitForSign({
         requestID,
-        cborHex: ur.cbor.toString("hex"),
+        cborHex: ur.cbor.toString('hex'),
         urType: ur.type,
       });
       resp = this._parseSignatureToHex(signatureHex, requestID);
-      this.emit("signTypedData", true);
+      this.emit('signTypedData', true);
     } catch (e) {
       if (e instanceof Error) {
-        this.catchError(e, "signTypedData");
+        this.catchError(e, 'signTypedData');
       }
-      return "";
+      return '';
     }
 
     return resp;
   }
 
   abort() {
-    this.emit("abortCall");
+    this.emit('abortCall');
     this.stop = true;
   }
 
   private _initWithCryptoHDKey(hdKey: CryptoHDKey) {
     this._xfp =
-      hdKey.getOrigin()?.getSourceFingerprint()?.toString("hex") || "";
+      hdKey.getOrigin()?.getSourceFingerprint()?.toString('hex') || '';
   }
 
   private _initWithCryptoAccount(account: CryptoAccount) {
-    this._xfp = account.getMasterFingerprint().toString("hex");
+    this._xfp = account.getMasterFingerprint().toString('hex');
     for (const descriptor of account.getOutputDescriptors()) {
       try {
         const cryptoHDKey = descriptor.getHDKey();
@@ -291,7 +291,7 @@ export class ProviderKeystoneReactNative
           const key = cryptoHDKey.getKey();
           const path = cryptoHDKey.getOrigin().getPath() as HDPath;
           const address = ethers.utils.computeAddress(key);
-          const publicKey = `0x${key.toString("hex")}`;
+          const publicKey = `0x${key.toString('hex')}`;
           this._cryptoAccontDataMap[path] = {
             address,
             publicKey,
@@ -305,13 +305,13 @@ export class ProviderKeystoneReactNative
 
   private async _getAccountInfoForCryptoHdKey(
     hdPath: string,
-    hdKey: CryptoHDKey
+    hdKey: CryptoHDKey,
   ) {
     const rootPath = `${hdKey.getOrigin().getPath()}/`;
-    const subPath = hdPath.replace(rootPath, "");
+    const subPath = hdPath.replace(rootPath, '');
 
     const hdNode = HDNode.fromExtendedKey(hdKey.getBip32Key()).derivePath(
-      subPath
+      subPath,
     );
 
     return {
@@ -324,7 +324,7 @@ export class ProviderKeystoneReactNative
     const accointInfo = this._cryptoAccontDataMap[hdPath];
 
     if (!accointInfo) {
-      this._throwError(ProviderKeystonErrorEnum.InvalidPath, "getAccountInfo");
+      this._throwError(ProviderKeystonErrorEnum.InvalidPath, 'getAccountInfo');
     }
 
     return accointInfo;
@@ -339,7 +339,7 @@ export class ProviderKeystoneReactNative
 
   private _parseSignature(signatureHex: string, requestID: string) {
     const signatureBuffer = hexBuffer(signatureHex);
-    const signatureUr = new UR(signatureBuffer, "eth-signature");
+    const signatureUr = new UR(signatureBuffer, 'eth-signature');
 
     const ethSignature = ETHSignature.fromCBOR(signatureUr.cbor);
     const signatureRequestID = uuidv4Stringify(ethSignature.getRequestId());
@@ -347,31 +347,31 @@ export class ProviderKeystoneReactNative
     if (signatureRequestID !== requestID) {
       this._throwError(
         ProviderKeystonErrorEnum.InvalidRequestID,
-        "_parseSignature"
+        '_parseSignature',
       );
     }
 
     const signature = ethSignature.getSignature();
 
     const jsonSignature = {
-      r: signature.slice(0, 32).toString("hex"),
-      s: signature.slice(32, 64).toString("hex"),
-      v: signature.slice(64, 65).toString("hex"),
+      r: signature.slice(0, 32).toString('hex'),
+      s: signature.slice(32, 64).toString('hex'),
+      v: signature.slice(64, 65).toString('hex'),
     };
 
     return {
-      r: "0x" + jsonSignature.r,
-      s: "0x" + jsonSignature.s,
+      r: '0x' + jsonSignature.r,
+      s: '0x' + jsonSignature.s,
       v: parseInt(jsonSignature.v, 16),
     };
   }
 
   private _parseSignatureToHex(
     signatureHex: string,
-    requestID: string
+    requestID: string,
   ): string {
     const signature = this._parseSignature(signatureHex, requestID);
-    const v = (signature.v - 27).toString(16).padStart(2, "0");
-    return "0x" + signature.r.slice(2) + signature.s.slice(2) + v;
+    const v = (signature.v - 27).toString(16).padStart(2, '0');
+    return '0x' + signature.r.slice(2) + signature.s.slice(2) + v;
   }
 }

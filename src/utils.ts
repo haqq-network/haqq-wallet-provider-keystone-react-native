@@ -40,3 +40,7 @@ export function hexBuffer(str: string | Buffer): Buffer {
   }
   return Buffer.from(str.startsWith('0x') ? str.slice(2) : str, 'hex');
 }
+
+export function normalize0x(strWith0x: string): string {
+  return strWith0x.replace(/^(0x)*/, '0x');
+}

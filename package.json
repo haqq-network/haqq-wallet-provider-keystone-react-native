@@ -1,6 +1,6 @@
 {
   "name": "@haqq/provider-keystone-react-native",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Provider for react-native keystone",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

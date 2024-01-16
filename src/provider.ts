@@ -19,7 +19,7 @@ import {ethers, utils, UnsignedTransaction} from 'ethers';
 import {HDNode} from 'ethers/lib/utils';
 
 import {PATH_INDEX_KEY, PATHS_PATTERN_MAP} from './constants';
-import {getCryptoAccountOrCryptoHDKeyFromHex} from './get-crypto-account-or-crypto-hdkey';
+import {getRegistryItemFromHex} from './get-registry-item';
 import {
   AccountInfo,
   KeyringAccountEnum,
@@ -31,6 +31,7 @@ import {
   hexBuffer,
   isCryptoAccount,
   isCryptoHDKey,
+  normalize0x,
   uuidv4,
   uuidv4Stringify,
 } from './utils';
@@ -54,9 +55,7 @@ export class ProviderKeystoneReactNative
   constructor(options: ProviderKeystoneReactNativeOptions) {
     super({...options, getPassword: () => Promise.resolve('')});
 
-    this._registryItem = getCryptoAccountOrCryptoHDKeyFromHex(
-      this._options.qrCBORHex,
-    );
+    this._registryItem = getRegistryItemFromHex(this._options.qrCBORHex);
 
     if (!this._registryItem) {
       this._throwError(ProviderKeystonErrorEnum.InvalidCborHex, 'constructor');
@@ -179,7 +178,7 @@ export class ProviderKeystoneReactNative
       }
     }
 
-    return resp;
+    return normalize0x(resp);
   }
 
   async signPersonalMessage(
@@ -222,7 +221,7 @@ export class ProviderKeystoneReactNative
       }
     }
 
-    return resp;
+    return normalize0x(resp);
   }
 
   async signTypedData(hdPath: string, typedData: TypedData) {
@@ -269,7 +268,7 @@ export class ProviderKeystoneReactNative
       return '';
     }
 
-    return resp;
+    return normalize0x(resp);
   }
 
   abort() {

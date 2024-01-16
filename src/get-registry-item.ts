@@ -2,7 +2,7 @@ import {CryptoAccount, CryptoHDKey} from '@keystonehq/bc-ur-registry-eth';
 
 const cache = new Map();
 
-export function getCryptoAccountOrCryptoHDKeyFromHex(hex: string) {
+export function getRegistryItemFromHex(hex: string) {
   try {
     if (cache.has(hex)) {
       return cache.get(hex);

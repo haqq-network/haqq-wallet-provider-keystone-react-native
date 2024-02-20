@@ -5,6 +5,7 @@ import {
   Provider,
   ProviderInterface,
   TypedData,
+  calcTypedDataSignatureV,
 } from '@haqq/provider-base';
 import {
   CryptoAccount,
@@ -35,6 +36,7 @@ import {
   uuidv4,
   uuidv4Stringify,
 } from './utils';
+import { ProviderKeystoneError } from './error';
 
 type HDPath = string;
 
@@ -47,7 +49,6 @@ export class ProviderKeystoneReactNative
   extends Provider<ProviderKeystoneReactNativeOptions>
   implements ProviderInterface
 {
-  public stop: boolean = false;
   private _xfp: string = '';
   private _registryItem: RegistryItem;
   private _cryptoAccontDataMap: Record<HDPath, AccountInfo> = {};
@@ -107,7 +108,6 @@ export class ProviderKeystoneReactNative
   async getAccountInfo(hdPath: string) {
     let resp = {publicKey: '', address: ''};
     try {
-      this.stop = false;
       if (isCryptoHDKey(this._registryItem)) {
         resp = await this._getAccountInfoForCryptoHdKey(
           hdPath,
@@ -135,7 +135,6 @@ export class ProviderKeystoneReactNative
   async signTransaction(hdPath: string, transaction: TransactionRequest) {
     const resp = '';
     try {
-      this.stop = false;
       const unsignedTx = ethers.utils.serializeTransaction(
         transaction as UnsignedTransaction,
       );
@@ -178,7 +177,7 @@ export class ProviderKeystoneReactNative
       }
     }
 
-    return normalize0x(resp);
+    return resp;
   }
 
   async signPersonalMessage(
@@ -187,8 +186,6 @@ export class ProviderKeystoneReactNative
   ): Promise<string> {
     let resp = '';
     try {
-      this.stop = false;
-
       const m = Array.from(
         typeof message === 'string' ? stringToUtf8Bytes(message) : message,
       );
@@ -221,14 +218,12 @@ export class ProviderKeystoneReactNative
       }
     }
 
-    return normalize0x(resp);
+    return resp;
   }
 
   async signTypedData(hdPath: string, typedData: TypedData) {
     let resp = '';
     try {
-      this.stop = false;
-
       // calculate primary type
       const otherTypes = {...typedData.types};
       delete otherTypes.EIP712Domain;
@@ -268,12 +263,11 @@ export class ProviderKeystoneReactNative
       return '';
     }
 
-    return normalize0x(resp);
+    return calcTypedDataSignatureV(resp);
   }
 
   abort() {
     this.emit('abortCall');
-    this.stop = true;
   }
 
   private _initWithCryptoHDKey(hdKey: CryptoHDKey) {
@@ -330,10 +324,9 @@ export class ProviderKeystoneReactNative
   }
 
   private _throwError(errCode: ProviderKeystonErrorEnum, source: string) {
-    const err = new Error(errCode);
     const errMsg = `[ProviderKeystoneReactNative:${source}]: ${errCode}`;
-    this.emit(source, false, err.message, err.name);
-    throw new Error(errMsg);
+    this.emit(source, false, errMsg, errCode);
+    throw new ProviderKeystoneError(errMsg, errCode, source);
   }
 
   private _parseSignature(signatureHex: string, requestID: string) {
@@ -371,6 +364,6 @@ export class ProviderKeystoneReactNative
   ): string {
     const signature = this._parseSignature(signatureHex, requestID);
     const v = (signature.v - 27).toString(16).padStart(2, '0');
-    return '0x' + signature.r.slice(2) + signature.s.slice(2) + v;
+    return normalize0x('0x' + signature.r.slice(2) + signature.s.slice(2) + v);
   }
 }

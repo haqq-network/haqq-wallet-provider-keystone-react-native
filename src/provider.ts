@@ -35,6 +35,7 @@ import {
   uuidv4,
   uuidv4Stringify,
 } from './utils';
+import { ProviderKeystoneError } from './error';
 
 type HDPath = string;
 
@@ -330,10 +331,9 @@ export class ProviderKeystoneReactNative
   }
 
   private _throwError(errCode: ProviderKeystonErrorEnum, source: string) {
-    const err = new Error(errCode);
     const errMsg = `[ProviderKeystoneReactNative:${source}]: ${errCode}`;
-    this.emit(source, false, err.message, err.name);
-    throw new Error(errMsg);
+    this.emit(source, false, errMsg, errCode);
+    throw new ProviderKeystoneError(errMsg, errCode, source);
   }
 
   private _parseSignature(signatureHex: string, requestID: string) {

@@ -1,11 +1,11 @@
 import {TransactionRequest} from '@ethersproject/abstract-provider';
 import {
+  calcTypedDataSignatureV,
   stringToUtf8Bytes,
   BytesLike,
   Provider,
   ProviderInterface,
   TypedData,
-  calcTypedDataSignatureV,
 } from '@haqq/provider-base';
 import {
   CryptoAccount,
@@ -20,6 +20,7 @@ import {ethers, utils, UnsignedTransaction} from 'ethers';
 import {HDNode} from 'ethers/lib/utils';
 
 import {PATH_INDEX_KEY, PATHS_PATTERN_MAP} from './constants';
+import {ProviderKeystoneError} from './error';
 import {getRegistryItemFromHex} from './get-registry-item';
 import {
   AccountInfo,
@@ -36,7 +37,6 @@ import {
   uuidv4,
   uuidv4Stringify,
 } from './utils';
-import { ProviderKeystoneError } from './error';
 
 type HDPath = string;
 
